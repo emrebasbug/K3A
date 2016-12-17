@@ -26,7 +26,7 @@ public class K3A extends CordovaPlugin implements
     private static boolean isStartPingPong = false;
     private Object hmList_Lock = new Object();
     private HashMap<String, EPCModel> hmList = new HashMap<String, EPCModel>();
-    private List<RFModel> sList = new ArrayList<RFModel>();
+    
     private String jsonString = new String();
     private int i = 0;
     private Object beep_Lock = new Object();
