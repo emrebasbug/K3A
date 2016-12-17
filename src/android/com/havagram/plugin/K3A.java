@@ -1,53 +1,20 @@
 package com.havagram.plugin;
-
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
-
 import com.clouiotech.port.Adapt;
 import com.clouiotech.pda.rfid.EPCModel;
 import com.clouiotech.pda.rfid.IAsynchronousMessage;
-import com.clouiotech.port.Adapt;
-import com.clouiotech.util.Helper.*;
 import com.clouiotech.pda.rfid.uhf.UHF;
 import com.clouiotech.pda.rfid.uhf.UHFReader;
-
 import org.json.JSONArray;
 import org.json.JSONException;
-
-import android.text.InputType;
-import org.apache.cordova.CordovaWebView;
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaPlugin;
-import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.PluginResult;
 import org.apache.cordova.PluginResult.Status;
-
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-
 import android.util.Log;
-
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.media.*;
-import android.os.Bundle;
-import android.os.Message;
-import android.util.Log;
-import android.view.*;
-import android.widget.*;
-import android.os.Handler;
-
+import java.util.*;
 
 
 /**
@@ -59,6 +26,9 @@ public class K3A extends CordovaPlugin implements
     private static boolean isStartPingPong = false;
     private Object hmList_Lock = new Object();
     private HashMap<String, EPCModel> hmList = new HashMap<String, EPCModel>();
+    private List<RFModel> sList = new ArrayList<RFModel>();
+    private String jsonString = new String();
+    private int i = 0;
     private Object beep_Lock = new Object();
       ToneGenerator toneGenerator = new ToneGenerator(AudioManager.STREAM_SYSTEM,
       ToneGenerator.MAX_VOLUME);
@@ -69,7 +39,7 @@ public class K3A extends CordovaPlugin implements
 
 
     @Override
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+    public boolean execute(String action, final JSONArray args, CallbackContext callbackContext) throws JSONException {
       boolean rt = false;
 
 
@@ -116,18 +86,25 @@ public class K3A extends CordovaPlugin implements
               isStartPingPong = true;
               while (isStartPingPong) {
                 try {
-                  CLReader.Read_EPC("3|1");
+                  //CLReader.Read_EPC("3|1|3,000006"); // USERDATA
+                  //CLReader.Read_EPC("3|1|2,0006"); // TID
+                  CLReader.Read_EPC("3|1"); // EPC
 
                   //Thread.sleep(1000);
 
                   if (300 > 0) {
                     CLReader.Stop();
 
-                    JSONObject JSONObj = new JSONObject(hmList);
-                    PluginResult result = new PluginResult(Status.OK, JSONObj) ;
-                    result.setKeepCallback(true);
+                    //JSONObject JSONObj = new JSONObject(hmList);
+                    String strResult = "";
+                    if(jsonString.length()>2)
+                      strResult = "[" + jsonString.substring(0,jsonString.length()-1) + "]";
 
+                    PluginResult result = new PluginResult(Status.OK,strResult) ;
+                    result.setKeepCallback(true);
+                    //_callbackContext.success(hmList.toString());
                     _callbackContext.sendPluginResult(result);
+
                     //Thread.sleep(300);
                   }
                 } catch (Exception e) {
@@ -177,6 +154,14 @@ public class K3A extends CordovaPlugin implements
           tModel._TotalCount++;
         } else {
           hmList.put(model._EPC + model._TID, model);
+
+          JSONObject obj = new JSONObject();
+          obj.put("id",i+1);
+          obj.put("EPC",model._EPC);
+          obj.put("TID",model._TID);
+          obj.put("USER",model._UserData);
+          jsonString += obj.toString() + ",";
+          i +=1;
         }
       }
       synchronized (beep_Lock) {
@@ -192,6 +177,7 @@ public class K3A extends CordovaPlugin implements
     {
       isStartPingPong = false;
     }
+
 }
 
 
